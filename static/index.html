@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saccade - Predictive Visual Attention & UI/UX Evaluator</title>
+  <meta name="description" content="Simulate human eye-tracking, gaze pathways, visual clutter, and layout efficiency using zero-quota local computer vision and Stitch design system integration.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="saccade-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="logo-text">
+          <h1>Saccade</h1>
+          <span>UI/UX Visual Audit</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-btn active" id="btn-tab-upload" data-tab="pane-upload">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Direct Upload</span>
+        </a>
+        <a href="#" class="nav-btn" id="btn-tab-stitch" data-tab="pane-stitch">
+          <i class="fa-solid fa-cubes"></i>
+          <span>Stitch Studio</span>
+        </a>
+        <a href="#" class="nav-btn" id="btn-tab-workspace" data-tab="pane-workspace">
+          <i class="fa-solid fa-laptop-code"></i>
+          <span>Workspace Audit</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Mode Context Controllers -->
+      <div class="sidebar-controls">
+        <!-- Direct Upload Pane -->
+        <div class="control-pane active" id="pane-upload">
+          <h3>Upload Screenshot</h3>
+          <div class="upload-dropzone" id="upload-dropzone">
+            <input type="file" id="image-file-input" accept="image/*" style="display: none;">
+            <i class="fa-regular fa-image"></i>
+            <p>Drag & drop UI screenshot here</p>
+            <span>or click to browse</span>
+          </div>
+        </div>
+
+        <!-- Stitch Studio Pane -->
+        <div class="control-pane" id="pane-stitch">
+          <h3>Stitch Integration</h3>
+          <p class="pane-desc">Evaluate visual designs directly from your Stitch projects.</p>
+          <div class="form-group">
+            <label for="stitch-project-select">Select Project</label>
+            <select id="stitch-project-select" class="form-select">
+              <option value="">Loading projects...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stitch-screen-select">Select Screen</label>
+            <select id="stitch-screen-select" class="form-select" disabled>
+              <option value="">Choose a project first</option>
+            </select>
+          </div>
+          <button class="action-btn btn-purple" id="btn-load-stitch-screen" disabled>
+            <i class="fa-solid fa-magnifying-glass-chart"></i> Evaluate Screen
+          </button>
+        </div>
+
+        <!-- Workspace Audit Pane -->
+        <div class="control-pane" id="pane-workspace">
+          <h3>Local App Audit</h3>
+          <p class="pane-desc">Test the visual flow of running development projects.</p>
+          <div class="form-group">
+            <label for="workspace-url-input">Local App URL</label>
+            <input type="url" id="workspace-url-input" class="form-input" value="http://localhost:8000" placeholder="e.g. http://localhost:8000">
+          </div>
+          <button class="action-btn btn-blue" id="btn-audit-workspace-url">
+            <i class="fa-solid fa-camera"></i> Capture & Audit UI
+          </button>
+          <div class="warning-alert">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Ensures the local server is running and accessible before capturing.</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="sidebar-status">
+        <span class="status-indicator online"></span>
+        <span class="status-label">Saccade Server Active</span>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="dashboard-workspace">
+      
+      <!-- Top Bar -->
+      <header class="workspace-header">
+        <div class="header-info">
+          <h2 id="page-title">Direct Upload</h2>
+          <p id="page-subtitle">Upload a static PNG or JPG layout mockup to run visual hierarchy simulations.</p>
+        </div>
+        
+        <!-- Toggle Control Bar -->
+        <div class="header-toggles">
+          <button class="utility-toggle" id="btn-toggle-ab" title="A/B Split Test Comparison">
+            <i class="fa-solid fa-columns"></i> A/B Compare
+          </button>
+          <button class="utility-toggle" id="btn-toggle-blindness" title="Toggle Banner Blindness Simulation">
+            <i class="fa-solid fa-eye-slash"></i> Banner Blindness
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Layout -->
+      <div class="workspace-content-grid">
+        
+        <!-- Left Section: Visualizers -->
+        <div class="visualizer-container" id="visualizer-container">
+          
+          <!-- Standard View -->
+          <div class="viewer-wrapper" id="single-viewer">
+            <div class="canvas-viewport" id="canvas-viewport">
+              <div class="canvas-container" id="canvas-container">
+                <!-- Original Image -->
+                <img id="source-image" src="" alt="UI Screenshot View" class="hidden">
+                <!-- Heatmap Canvas overlay -->
+                <canvas id="heatmap-canvas" class="overlay-layer hidden"></canvas>
+                <!-- Fog Map Canvas overlay -->
+                <canvas id="fog-canvas" class="overlay-layer hidden"></canvas>
+                <!-- SVG Vector Scanpath overlay -->
+                <svg id="scanpath-svg" class="overlay-layer hidden"></svg>
+                <!-- Interactive Drawing layer for AOIs -->
+                <div id="aoi-draw-layer" class="overlay-layer hidden"></div>
+                <!-- Loading Overlay -->
+                <div class="loading-overlay hidden" id="loading-overlay">
+                  <div class="spinner-container">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span>Analyzing Visual Saliency...</span>
+                  </div>
+                </div>
+                <!-- Dropzone Placeholder inside canvas -->
+                <div class="canvas-placeholder" id="canvas-placeholder-view">
+                  <i class="fa-solid fa-mountain-sun"></i>
+                  <p>No screenshot loaded. Upload an image, choose a Stitch screen, or audit a local app to start.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- A/B Comparison View (Split View) -->
+          <div class="viewer-wrapper hidden" id="ab-viewer">
+            <div class="split-pane">
+              <!-- Left Pane (A) -->
+              <div class="split-half" id="pane-a">
+                <div class="pane-header">Design A (Original)</div>
+                <div class="canvas-viewport">
+                  <div class="canvas-container" id="canvas-container-a">
+                    <img id="source-image-a" src="" alt="Design A" class="hidden">
+                    <canvas id="heatmap-canvas-a" class="overlay-layer hidden"></canvas>
+                    <svg id="scanpath-svg-a" class="overlay-layer hidden"></svg>
+                    <div class="canvas-placeholder">
+                      <i class="fa-solid fa-image"></i>
+                      <p>Drag Design A here</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Right Pane (B) -->
+              <div class="split-half" id="pane-b">
+                <div class="pane-header">Design B (Variant)</div>
+                <div class="canvas-viewport">
+                  <div class="canvas-container" id="canvas-container-b">
+                    <img id="source-image-b" src="" alt="Design B" class="hidden">
+                    <canvas id="heatmap-canvas-b" class="overlay-layer hidden"></canvas>
+                    <svg id="scanpath-svg-b" class="overlay-layer hidden"></svg>
+                    <div class="canvas-placeholder">
+                      <i class="fa-solid fa-image"></i>
+                      <p>Drag Design B here</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Bottom Playback Control bar -->
+          <div class="playback-controls">
+            <div class="controls-left">
+              <button class="play-btn" id="btn-play-scanpath" disabled>
+                <i class="fa-solid fa-play"></i> Play Path
+              </button>
+              <div class="time-readout" id="scanpath-timer">0ms</div>
+            </div>
+            
+            <div class="controls-mid">
+              <!-- View Mode Toggles -->
+              <div class="mode-toggles">
+                <button class="mode-btn active" id="btn-mode-heatmap" data-mode="heatmap">Heatmap</button>
+                <button class="mode-btn" id="btn-mode-fog" data-mode="fog">Fog Map</button>
+                <button class="mode-btn" id="btn-mode-scanpath" data-mode="scanpath">Scanpath</button>
+                <button class="mode-btn" id="btn-mode-none" data-mode="none">Original</button>
+              </div>
+            </div>
+            
+            <div class="controls-right">
+              <div class="range-control">
+                <label for="opacity-slider">Opacity</label>
+                <input type="range" id="opacity-slider" min="0" max="100" value="60">
+              </div>
+            </div>
+          </div>
+
+        </div>
+        
+        <!-- Right Section: Analytics Panels -->
+        <aside class="analytics-sidebar">
+          
+          <!-- Parameters Card -->
+          <section class="glass-card param-card">
+            <h3>Simulation Options</h3>
+            <div class="form-group">
+              <div class="label-row">
+                <label for="param-fixations">Max Gaze Fixations</label>
+                <span class="value-readout" id="val-fixations">7</span>
+              </div>
+              <input type="range" id="param-fixations" class="slider-control" min="3" max="15" value="7">
+            </div>
+            <div class="form-group">
+              <div class="label-row">
+                <label for="param-radius">Inhibition Radius</label>
+                <span class="value-readout" id="val-radius">80px</span>
+              </div>
+              <input type="range" id="param-radius" class="slider-control" min="40" max="150" value="80">
+            </div>
+            <div class="form-group">
+              <label for="param-task-mode">Visual Task Intent</label>
+              <select id="param-task-mode" class="form-select">
+                <option value="free_browsing" selected>Free Browsing (Instinctive)</option>
+                <option value="info_search">Information Search (Reading Text)</option>
+                <option value="action_search">Action Search (Finding Buttons)</option>
+              </select>
+            </div>
+          </section>
+          
+          <!-- Metrics Gauge Grid -->
+          <section class="metrics-grid">
+            <div class="glass-card gauge-card">
+              <h4>Visual Clutter</h4>
+              <div class="gauge-wrapper">
+                <svg class="circular-gauge" viewBox="0 0 36 36">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path id="gauge-clutter-path" class="circle-fill clutter" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="gauge-text">
+                  <span class="score" id="score-clutter">0%</span>
+                  <span class="label" id="rating-clutter">-</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="glass-card gauge-card">
+              <h4>Cognitive Load</h4>
+              <div class="gauge-wrapper">
+                <svg class="circular-gauge" viewBox="0 0 36 36">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path id="gauge-load-path" class="circle-fill load" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="gauge-text">
+                  <span class="score" id="score-load">0%</span>
+                  <span class="label" id="rating-load">-</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Reading Flow Card -->
+          <section class="glass-card flow-card">
+            <h3>Gaze Reading Flow</h3>
+            <div class="flow-summary">
+              <div class="flow-icon"><i class="fa-solid fa-route"></i></div>
+              <div class="flow-details">
+                <span class="flow-title" id="flow-pattern-title">Scattered / Undetermined</span>
+                <span class="flow-score" id="flow-pattern-score">Flow Index: --</span>
+              </div>
+            </div>
+          </section>
+          
+          <!-- Bounding Box / Areas of Interest (AOI) Manager -->
+          <section class="glass-card aoi-card">
+            <div class="card-header-row">
+              <h3>Areas of Interest (AOIs)</h3>
+              <button class="btn-small" id="btn-add-aoi" disabled>
+                <i class="fa-solid fa-plus"></i> Add
+              </button>
+            </div>
+            <p class="aoi-desc">Draw boxes on screenshot to inspect exact visual share.</p>
+            <div class="aoi-list-wrapper">
+              <table class="aoi-table" id="aoi-table">
+                <thead>
+                  <tr>
+                    <th>Element Label</th>
+                    <th style="text-align: right;">Attention Share %</th>
+                    <th style="width: 40px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="aoi-list-tbody">
+                  <tr class="empty-row">
+                    <td colspan="3">No areas of interest defined. Click 'Add' to draw a box.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- AI Layout Critiques -->
+          <section class="glass-card recommendations-card flex-grow">
+            <h3>Visual Critique & Suggestions</h3>
+            <ul class="recs-list" id="recs-list">
+              <li><i class="fa-solid fa-circle-check"></i> Complete a visual evaluation to view suggestions.</li>
+            </ul>
+          </section>
+          
+        </aside>
+
+      </div>
+    </main>
+
+  </div>
+</body>
+</html>
