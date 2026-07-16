@@ -47,7 +47,7 @@
         <div class="control-pane active" id="pane-upload">
           <h3>Upload Screenshot</h3>
           <div class="upload-dropzone" id="upload-dropzone">
-            <input type="file" id="image-file-input" accept="image/*" style="display: none;">
+            <input type="file" id="image-file-input" accept="image/*" class="hidden" title="Choose Screenshot File" aria-label="Choose Screenshot File">
             <i class="fa-regular fa-image"></i>
             <p>Drag & drop UI screenshot here</p>
             <span>or click to browse</span>
@@ -309,8 +309,8 @@
                 <thead>
                   <tr>
                     <th>Element Label</th>
-                    <th style="text-align: right;">Attention Share %</th>
-                    <th style="width: 40px;"></th>
+                    <th class="align-right">Attention Share %</th>
+                    <th class="width-action"></th>
                   </tr>
                 </thead>
                 <tbody id="aoi-list-tbody">
